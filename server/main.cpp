@@ -17,6 +17,7 @@ int main(){
     std::thread rpi_communication(raspberryConnections);
     std::cout<<"communication with raspberry is going in other thread"<<std::endl;
     rpi_communication.join();
+    std::cout<<"other thread joined"<<std::endl;
 
     return 0;
 }
@@ -66,6 +67,5 @@ void raspberryConnections(){
     }
     else
         printf("No tries to connect within five seconds.\n");
-
-    exit(EXIT_SUCCESS);
+    
 }
