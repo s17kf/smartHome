@@ -1,5 +1,9 @@
-from devices.light import Light
-from devices.shade import Shade
+try:
+    from .light import Light
+    from .shade import Shade
+except SystemError:
+    from light import Light
+    from shade import Shade
 
 def getNextArg(line, start = 0):
     i = start
@@ -54,7 +58,10 @@ def addDevice(line, key):
         raise KeyError ('no recognized device code:', devCode)
 
 if __name__ == '__main__':
-    devices_path = 'devices.conf'
+    rpi_key = 12
+    #TODO: rpi_key from file or other better way
+    devices_path = '../devices.conf'
+    #TODO: path from file or something
     devices = []
     with open(devices_path, 'r') as devices_file:
         lines = devices_file.readlines()
@@ -68,7 +75,10 @@ if __name__ == '__main__':
             except ValueError as error:
                 print('val error:', error)
 
+    print("devices:")
     for dev in devices:
         print(dev.__dict__)
+
+
 
     

@@ -1,2 +1,2 @@
 #from light import *
-__all__ = ['endpoint', 'light', 'shade']
+__all__ = ['endpoint', 'light', 'shade', 'initialize']
