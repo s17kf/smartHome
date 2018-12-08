@@ -1,9 +1,11 @@
 try:
     from .light import Light
     from .shade import Shade
+    from .device_codes import DeviceCode as Code
 except SystemError:
     from light import Light
     from shade import Shade
+    from device_codes import DeviceCode as Code
 
 def getNextArg(line, start = 0):
     i = start
@@ -48,14 +50,13 @@ def addShade(arg_line, key):
 #TODO: some values are ints
 
 def addDevice(line, key):
-    devCode = line[0:3]
-    if devCode == 'lig':     #light
-        #TODO logger
+    devCode = Code(line[0:3])
+    if devCode == Code.light:
         return addLight(line[4:], key)
-    elif devCode == 'shd':  #shade
+    elif devCode == Code.shade:
         return addShade(line[4:], key)
     else:
-        raise KeyError ('no recognized device code:', devCode)
+        raise KeyError ('no recognized device code: {code}',format(code = devCode))
 
 if __name__ == '__main__':
     rpi_key = 12

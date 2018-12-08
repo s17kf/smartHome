@@ -6,6 +6,7 @@ class Connection:
         self.__serverIP = serverIP
         self.__socket = socket.socket()
         self.__connected = False
+        #TODO: connected status is here and in client class - not good
 
     def connect(self):
         self.__socket.connect((self.__serverIP, self.__port))
