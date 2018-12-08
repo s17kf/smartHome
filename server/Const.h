@@ -10,6 +10,7 @@
 class Const {
 public:
     static const ssize_t max_rpis = 5;
+    static const __time_t answer_timeout = 5;
 
 private:
     Const() = default;

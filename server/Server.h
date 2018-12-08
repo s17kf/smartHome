@@ -15,7 +15,6 @@
 
 #include "exceptions.h"
 #include "Const.h"
-#include "Packet.h"
 
 typedef unsigned int uint;
 typedef unsigned char uchar;
@@ -39,6 +38,9 @@ public:
     ssize_t sendEncodedMsg(int client_socket, unsigned char *msg, size_t length);
     void closeConnection(int client_socket);
     int raspberryRegistrate(int client_socket, ulong ip);
+
+private:
+    int addDevices(int client_fd);
 
 };
 

@@ -6,12 +6,17 @@
 #define SERVER_PACKET_H
 
 
+#include "Server.h"
+
 class Packet {
 public:
-    static const unsigned char nack = 0x00;
-    static const unsigned char ack = 0x01;
-    static const unsigned char reg = 0x02;     //registration
-    static const unsigned char exit = 0xff;
+    static const uchar nack = 0x00;
+    static const uchar ack = 0x01;
+    static const uchar reg = 0x02;     //registration
+    static const uchar dev = 0x03;
+    static const uchar all = 0xf0;
+    static const uchar end = 0x0f;
+    static const uchar exit = 0xff;
 
 private:
     Packet() = default;

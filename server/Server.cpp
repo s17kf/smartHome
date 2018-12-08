@@ -3,6 +3,7 @@
 //
 
 #include "Server.h"
+#include "Packet.h"
 
 Server::Server(int port) {
     opt = 1;
@@ -77,7 +78,7 @@ int Server::raspberryRegistrate(int client_socket, ulong ip) {
             throw std::out_of_range("max registered raspberries reached");
         ++new_id;
     }
-//    new_id = 123;
+//    new_id = 1111;
     last_registered_id = new_id;
     registered_rpis.insert(std::pair<short, ulong>(ip, new_id));
     ids_in_use.insert(new_id);
@@ -90,6 +91,58 @@ int Server::raspberryRegistrate(int client_socket, ulong ip) {
 //    std::cout<<"wait before answer"<<std::endl;
 //    sleep(1);
     sendEncodedMsg(client_socket, answer, answer_len);
+    std::cout<<"registering devices"<<std::endl;
+    auto new_devices = addDevices(client_socket);
+    std::cout<<new_devices<<" new devices"<<std::endl;
 
     return new_id;
+}
+
+int Server::addDevices(int client_fd) {
+    fd_set rfds;
+    timeval timeout;
+    timeout.tv_sec = Const::answer_timeout;
+    timeout.tv_usec = 0;
+    FD_ZERO(&rfds);
+    FD_SET(client_fd, &rfds);
+    int ret = 0;
+    while(true) {
+        int retval = select(client_fd + 1, &rfds, nullptr, nullptr, &timeout);
+        if (retval == -1) {
+            perror("select error");
+            return -1;
+        } else if (retval) {
+            if (FD_ISSET(client_fd, &rfds)) {
+                std::cout<<"msg available"<<std::endl;
+                auto *msg = new uchar[3];
+                auto received = readMsg(client_fd, msg, 2);
+//                auto *msg_len = reinterpret_cast<short *>(msg);
+                auto *msg_len = new short;
+                memcpy(msg_len, msg, 2);
+                delete[] msg;
+                msg = new uchar[*msg_len - 2];
+                received = readMsg(client_fd, msg, *msg_len - 2);
+//            char readable_msg[*msg_len + 1];
+                for (auto i = 0; i < *msg_len; ++i) {
+                    std::cout << msg[i] << " ";
+                }
+                std::cout << std::endl;
+//            memcpy(readable_msg, msg, *msg_len);
+                delete msg_len;
+//            readable_msg[*msg_len] = '\0';
+                if(msg[2] == Packet::end){
+                    std::cout<<"end received"<<std::endl;
+                    break;
+                }
+                delete[] msg;
+                uchar answer_ack[1];
+                answer_ack[0] = Packet::ack;
+                sendEncodedMsg(client_fd, answer_ack, 1);
+                ++ret;
+            } else {
+                std::cout << "something received not on client socket" << std::endl;
+            }
+        }
+    }
+    return ret;
 }

@@ -35,37 +35,38 @@ void raspberryConnections(){
     int retval = select(server->getSocket_fd()+1, &rfds, nullptr, nullptr, &tv);
     if (retval == -1)
         perror("select()");
-    else if (retval)
+    else if (retval) {
         printf("Data is available now.\n");
-    if(FD_ISSET(server->getSocket_fd(), &rfds)){
-        std::cout<<"connection on server"<<std::endl;
-        uint client_ip;
-        int client_fd = server->getConnection(&client_ip);
-        ssize_t received = server->readMsg(client_fd, buffer, 2);
-        std::cout<<received<< " bytes from client"<<std::endl;
-        auto *msg_len = reinterpret_cast<short *>(buffer);
-        std::cout<<"msg len: " << *msg_len<<std::endl;
-        received = server->readMsg(client_fd, buffer, *msg_len - 2);
-        std::cout<<"received " << received << " additional bytes" << std::endl;
-        int new_id;
-        switch (buffer[0]){
-            case Packet::reg:
-                std::cout<<"ask for registration received"<<std::endl;
-                new_id = server->raspberryRegistrate(client_fd, client_ip);
-                std::cout<<"new rpi with id " << new_id<<std::endl;
-                //TODO: send nack if registration failed
-                break;
-            case Packet::exit:
-                std::cout<<"exit received"<<std::endl;
-                break;
-            default:
-                std::cout<<"unresolved packet received"<<std::endl;
-                //TODO: throw exception
-        }
+        if (FD_ISSET(server->getSocket_fd(), &rfds)) {
+            std::cout << "connection on server" << std::endl;
+            uint client_ip;
+            int client_fd = server->getConnection(&client_ip);
+            ssize_t received = server->readMsg(client_fd, buffer, 2);
+            std::cout << received << " bytes from client" << std::endl;
+            auto *msg_len = reinterpret_cast<short *>(buffer);
+            std::cout << "msg len: " << *msg_len << std::endl;
+            received = server->readMsg(client_fd, buffer, *msg_len - 2);
+            std::cout << "received " << received << " additional bytes" << std::endl;
+            int new_id;
+            switch (buffer[0]) {
+                case Packet::reg:
+                    std::cout << "ask for registration received" << std::endl;
+                    new_id = server->raspberryRegistrate(client_fd, client_ip);
+                    std::cout << "new rpi with id " << new_id << std::endl;
+                    //TODO: send nack if registration failed
+                    break;
+                case Packet::exit:
+                    std::cout << "exit received" << std::endl;
+                    break;
+                default:
+                    std::cout << "unresolved packet received" << std::endl;
+                    //TODO: throw exception
+            }
 
-        server->closeConnection(client_fd);
+            server->closeConnection(client_fd);
+        }
     }
     else
         printf("No tries to connect within five seconds.\n");
-    
+
 }
