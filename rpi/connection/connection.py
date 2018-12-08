@@ -17,11 +17,16 @@ class Connection:
         self.__socket.close()
 
     def send(self, msg):
-        self.__socket.send(msg)
+        return self.__socket.send(msg)
 
     def sendFormattedMsg(self, msg):
         msg_len = len(msg) + 2
-        self.send(msg_len.to_bytes(2, 'little') + msg)
+        print('sending {l1} bytes: {b1}'.format(l1 = msg_len, b1=(msg_len).to_bytes(2, 'little') + msg))
+        return self.send(msg_len.to_bytes(2, 'little') + msg)
+
+    # def sendFormattedMsg(self, msg, length):
+    #     print('sending {l1} bytes: {b1}'.format(l1 = length, b1 = (length + 2).to_bytes(2, 'little') + msg))
+    #     return self.send((length + 2).to_bytes(2, 'little') + msg)
 
     def recv(self, lenght):
         return self.__socket.recv(lenght)

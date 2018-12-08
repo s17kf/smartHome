@@ -6,7 +6,7 @@ import time
 
 class Client:
     def __init__(self, devs_file_path, server_ip, port = 1234):
-        self.endian = 'little'      #TODO: endians correctly
+        self.endian = 'little'      # #TODO: endians correctly
         self.__connected = False
         self.__devices = []
         self.__con = Connection(port, server_ip)
@@ -60,7 +60,8 @@ class Client:
             msg = self.__id.to_bytes(2, self.endian) + Packet.dev.value + msg
             print(msg)
             print('msg len {l}'.format(l = length))
-            self.__con.sendFormattedMsg(msg)
+            sent = self.__con.sendFormattedMsg(msg)
+            print('sent {b1} bytes'.format(b1 = sent))
             answer_length = int.from_bytes(self.__con.recv(2), self.endian)
             answer = self.__con.recv(answer_length - 2)
             received_packet = Packet(answer[0].to_bytes(1, self.endian))
