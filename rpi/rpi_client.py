@@ -50,16 +50,29 @@ class Client:
         print('get ansver length {l} bytes'.format(l = answer_length))
         answer = self.__con.recv(answer_length - 2)
         received_packet = Packet(answer[0].to_bytes(1, self.endian))
-        if(received_packet == Packet.ack):
+        if received_packet == Packet.ack:
             print('received id is {id}'.format(id = int.from_bytes(answer[1:3], self.endian)))
         else:
             print('wrong packet received {packet}'.format(packet = answer[0]))
-        self.__con.disconnect()
         self.__id = int.from_bytes(answer[1:3], self.endian)
         for device in self.__devices:
             msg, length = device.generateMsg()
+            msg = self.__id.to_bytes(2, self.endian) + Packet.dev.value + msg
             print(msg)
             print('msg len {l}'.format(l = length))
+            self.__con.sendFormattedMsg(msg)
+            answer_length = int.from_bytes(self.__con.recv(2), self.endian)
+            answer = self.__con.recv(answer_length - 2)
+            received_packet = Packet(answer[0].to_bytes(1, self.endian))
+            if received_packet == Packet.ack:
+                print('succesful sent device {key}'.format(key = device.getKey()))
+            elif received_packet == Packet.nack:
+                print('device {key} not sent!'.format(key = device.getKey()))
+            else:
+                print('unresolved answer received')
+            #TODO: repeat if nack or delete endpoint device
+        self.__con.sendFormattedMsg(self.__id.to_bytes(2, self.endian) + Packet.end.value)
+        self.__con.disconnect()
         
 
 
