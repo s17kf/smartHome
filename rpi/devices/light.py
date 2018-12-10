@@ -1,9 +1,11 @@
 try:
     from .endpoint import Endpoint
-    from .device_codes import DeviceCode as DevCode
+    from .device_types import DevTypeCode
+    from .device_types import DevTypeId
 except SystemError:
     from endpoint import Endpoint
-    from device_codes import DeviceCode as DevCode
+    from device_types import DevTypeCode
+    from device_types import DevTypeId
 
 class Light(Endpoint):
     def __init__(self, key, name, pin, zero_triggered = False):
@@ -21,10 +23,11 @@ class Light(Endpoint):
 
     def generateMsg(self, endian = 'little'):
         msg, length = super().generateMsg(endian)
-        msg = DevCode.light.value.encode() + msg
+        print('light super msg: {m}'.format(m=msg))
+        msg = DevTypeId.light.value.to_bytes(2, endian) + msg
         msg += self.__pin.to_bytes(2, endian) + self.__zero_triggered.to_bytes(1, endian)
-        return (msg, length + 6)
-        # length = super.length + 3(devcode len) + 2(pin len) + 1(0 trig len) = length + 6
+        return (msg, length + 5)
+        # length = super.length + 2(dev id len) + 2(pin len) + 1(0 trig len) = length + 5
 
 
         

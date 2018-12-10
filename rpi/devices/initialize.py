@@ -1,11 +1,11 @@
 try:
     from .light import Light
     from .shade import Shade
-    from .device_codes import DeviceCode as Code
+    from .device_types import DevTypeCode
 except SystemError:
     from light import Light
     from shade import Shade
-    from device_codes import DeviceCode as Code
+    from device_codes import DevTypeCode
 
 def getNextArg(line, start = 0):
     i = start
@@ -21,8 +21,10 @@ def getNextArg(line, start = 0):
             i += 1
     return (arg, i) 
 
+
 def getDevCode(line):
     return line[0:3]
+
 
 def addLight(arg_line, key):
     pin, i = getNextArg(arg_line)
@@ -50,10 +52,10 @@ def addShade(arg_line, key):
 #TODO: some values are ints
 
 def addDevice(line, key):
-    devCode = Code(line[0:3])
-    if devCode == Code.light:
+    devCode = DevTypeCode(line[0:3])
+    if devCode == DevTypeCode.light:
         return addLight(line[4:], key)
-    elif devCode == Code.shade:
+    elif devCode == DevTypeCode.shade:
         return addShade(line[4:], key)
     else:
         raise KeyError ('no recognized device code: {code}',format(code = devCode))

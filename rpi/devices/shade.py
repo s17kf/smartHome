@@ -1,9 +1,11 @@
 try:
     from .endpoint import Endpoint
-    from .device_codes import DeviceCode as DevCode
+    from .device_types import DevTypeCode
+    from .device_types import DevTypeId
 except SystemError:
     from endpoint import Endpoint
-    from device_codes import DeviceCode as DevCode
+    from device_types import DevTypeCode
+    from device_types import DevTypeId
 
 class Shade(Endpoint):
     def __init__(self, key, name, pinA, pinB):
@@ -25,10 +27,11 @@ class Shade(Endpoint):
 
     def generateMsg(self, endian = 'little'):
         msg, length = super().generateMsg(endian)
-        msg = DevCode.shade.value.encode() + msg
+        msg = DevTypeId.shade.value.to_bytes(2, endian) + msg
         msg += self.__pinA.to_bytes(2, endian) + self.__pinB.to_bytes(2, endian)
-        return (msg, length + 7)
-        #length = super.length + 3(devcode len) + 2(pin a len) + 2(pin b len) = length + 7
+        return (msg, length + 6)
+        # length = super.length + 2(devid len) + 2(pin a len) + 2(pin b len) = length + 6
+
 
 if __name__ == '__main__':
     shade = Shade(1, 'shade name', 1, 2)
