@@ -7,10 +7,15 @@
 
 #include <iostream>
 
+typedef unsigned int uint;
+typedef unsigned char uchar;
+typedef unsigned long ulong;
+
 class Const {
 public:
     static const ssize_t max_rpis = 5;
     static const __time_t answer_timeout = 5;
+    static const uint name_len_index = 5;
 
 private:
     Const() = default;
@@ -18,5 +23,9 @@ private:
     Const&operator = (const Const &org) = default;
 };
 
+enum DevTypeId{
+    light = 1,
+    shade = 2
+};
 
 #endif //SERVER_CONST_H

@@ -6,67 +6,82 @@
 #include <unistd.h>
 #include <thread>
 
-#include "Server.h"
+#include "RpiCommunication.h"
 #include "Packet.h"
+#include "logger/Logger.h"
 
 //using namespace std;
 
 void raspberryConnections();
 
 int main(){
+    std::string log_filepath = "../logs/file.log";
+    uint log_stdout_min_lv = 5;
+    logInit(log_filepath.c_str(), log_stdout_min_lv);
     std::thread rpi_communication(raspberryConnections);
-    std::cout<<"communication with raspberry is going in other thread"<<std::endl;
+//    std::cout<<"communication with raspberry is going in other thread"<<std::endl;
+    log(0, "communication with raspberry is going in other thread");
     rpi_communication.join();
-    std::cout<<"other thread joined"<<std::endl;
-
+//    std::cout<<"other thread joined"<<std::endl;
+    log(0, "other thread joined ending program");
+    logClose();
     return 0;
 }
 
 void raspberryConnections(){
     fd_set rfds;
     timeval tv;
-
     unsigned char buffer[1024];
-    auto *server = new Server(1234);
+    auto *rpi_communication = new RpiCommunication(1234);
     FD_ZERO(&rfds);
-    FD_SET(server->getSocket_fd(), &rfds);
+    FD_SET(rpi_communication->getSocket_fd(), &rfds);
     tv.tv_sec = 5;
     tv.tv_usec = 0;
-    int retval = select(server->getSocket_fd()+1, &rfds, nullptr, nullptr, &tv);
+    int retval = select(rpi_communication->getSocket_fd()+1, &rfds, nullptr, nullptr, &tv);
     if (retval == -1)
         perror("select()");
     else if (retval) {
-        printf("Data is available now.\n");
-        if (FD_ISSET(server->getSocket_fd(), &rfds)) {
-            std::cout << "connection on server" << std::endl;
+        log(1, "new connection from raspberry");
+        if (FD_ISSET(rpi_communication->getSocket_fd(), &rfds)) {
             uint client_ip;
-            int client_fd = server->getConnection(&client_ip);
-            ssize_t received = server->readMsg(client_fd, buffer, 2);
-            std::cout << received << " bytes from client" << std::endl;
-            auto *msg_len = reinterpret_cast<short *>(buffer);
-            std::cout << "msg len: " << *msg_len << std::endl;
-            received = server->readMsg(client_fd, buffer, *msg_len - 2);
-            std::cout << "received " << received << " additional bytes" << std::endl;
+            int client_fd = rpi_communication->getConnection(&client_ip);
+            char client_ip_str[16];
+            const char *ret_val = inet_ntop(AF_INET, &client_ip, client_ip_str, 16);
+            if(ret_val != nullptr)
+                log(2, "Get connection from %s", client_ip_str);
+            else{
+                log(1, "Failed to get rpi client ip address");
+            }
+            ssize_t received = rpi_communication->readMsg(client_fd, buffer, 2);
+//            auto *msg_len = reinterpret_cast<short *>(buffer);
+            short msg_len;
+            memcpy(&msg_len, buffer, sizeof(msg_len));
+            received = rpi_communication->readMsg(client_fd, buffer, msg_len - 2);
+            if(received == msg_len - 2)
+                log(3, "received %d bytes from %s", received, client_ip_str);
+            else
+                log(0, "received %d bytes when expected %d from %s", received, msg_len - 2, client_ip_str);
             int new_id;
             switch (buffer[0]) {
                 case Packet::reg:
-                    std::cout << "ask for registration received" << std::endl;
-                    new_id = server->raspberryRegistrate(client_fd, client_ip);
-                    std::cout << "new rpi with id " << new_id << std::endl;
+                    log(4, "ask for registration received from %s", client_ip_str);
+                    new_id = rpi_communication->raspberryRegistrate(client_fd, client_ip);
+                    log(3, "%s - new rpi registrate with id %d", client_ip_str, new_id);
                     //TODO: send nack if registration failed
                     break;
                 case Packet::exit:
-                    std::cout << "exit received" << std::endl;
+                    log(3, "exit received");
                     break;
                 default:
-                    std::cout << "unresolved packet received" << std::endl;
+                    log(0, "unresolved packet received from %s", client_ip_str);
                     //TODO: throw exception
             }
 
-            server->closeConnection(client_fd);
+            rpi_communication->closeConnection(client_fd);
         }
     }
     else
         printf("No tries to connect within five seconds.\n");
 
+    delete rpi_communication;
 }

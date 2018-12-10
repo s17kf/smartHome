@@ -6,7 +6,7 @@
 #define SERVER_PACKET_H
 
 
-#include "Server.h"
+#include "RpiCommunication.h"
 
 class Packet {
 public:

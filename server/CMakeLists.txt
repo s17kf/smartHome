@@ -5,4 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 link_libraries(pthread)
 
-add_executable(server main.cpp Server.cpp Server.h exceptions.h Packet.cpp Packet.h Const.h)
+add_executable(server main.cpp
+        RpiCommunication.cpp RpiCommunication.h
+        exceptions.h
+        Packet.cpp Packet.h
+        Const.h
+        Server.cpp Server.h
+        RpiClient.cpp RpiClient.h
+        endpoints/Endpoint.cpp endpoints/Endpoint.h
+        logger/Logger.cpp logger/Logger.h)
