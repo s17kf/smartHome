@@ -44,6 +44,7 @@ def addLight(arg_line, key):
     return Light(key, name, int(pin), zero_triggered)
 #TODO some values are int
 
+
 def addShade(arg_line, key):
     pinA, i = getNextArg(arg_line)
     pinB, i = getNextArg(arg_line, i+1)
@@ -51,14 +52,18 @@ def addShade(arg_line, key):
     return Shade(key, name, int(pinA), int(pinB))
 #TODO: some values are ints
 
+
 def addDevice(line, key):
-    devCode = DevTypeCode(line[0:3])
+    devCode = line[0:3]
+    try:
+        devCode = DevTypeCode(devCode)
+    except ValueError:
+        raise KeyError(devCode)
     if devCode == DevTypeCode.light:
         return addLight(line[4:], key)
     elif devCode == DevTypeCode.shade:
         return addShade(line[4:], key)
-    else:
-        raise KeyError ('no recognized device code: {code}',format(code = devCode))
+
 
 if __name__ == '__main__':
     rpi_key = 12

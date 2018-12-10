@@ -15,6 +15,8 @@ class Endpoint:
     def generateMsg(self, endian = 'little'):
         msg = self.__key.to_bytes(2, endian) + len(self.__name).to_bytes(2, endian)
         msg += self.__name.encode()
-        return (msg, 4 + len(self.__name))
-        
+        return msg, 4 + len(self.__name)
+
+    def str(self):
+        return 'key={}, name=\'{}\''.format(self.__key, self.__name)
 

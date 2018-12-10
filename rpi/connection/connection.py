@@ -1,4 +1,5 @@
 import socket, time
+from logger.logger import Log
 
 class Connection:
     def __init__(self, port, serverIP):
@@ -21,7 +22,7 @@ class Connection:
 
     def sendFormattedMsg(self, msg):
         msg_len = len(msg) + 2
-        print('sending {l1} bytes: {b1}'.format(l1 = msg_len, b1=(msg_len).to_bytes(2, 'little') + msg))
+        Log.log(5, 'sending {} bytes: {}'.format(msg_len, (msg_len).to_bytes(2, 'little') + msg))
         return self.send(msg_len.to_bytes(2, 'little') + msg)
 
     # def sendFormattedMsg(self, msg, length):
@@ -34,6 +35,7 @@ class Connection:
     def getConnectTime(self):
         #TODO error if no connected
         return self.__connect_time
+
 
 if __name__ == '__main__':
     con = Connection(1234, '192.168.1.19')

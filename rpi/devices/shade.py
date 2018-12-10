@@ -32,6 +32,9 @@ class Shade(Endpoint):
         return (msg, length + 6)
         # length = super.length + 2(devid len) + 2(pin a len) + 2(pin b len) = length + 6
 
+    def str(self):
+        return 'Shade=[' + super().str() + ' pinA={}, pinB={}]'.format(self.__pinA, self.__pinB)
+
 
 if __name__ == '__main__':
     shade = Shade(1, 'shade name', 1, 2)

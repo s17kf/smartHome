@@ -23,15 +23,16 @@ class Light(Endpoint):
 
     def generateMsg(self, endian = 'little'):
         msg, length = super().generateMsg(endian)
-        print('light super msg: {m}'.format(m=msg))
+        # print('light super msg: {m}'.format(m=msg))
         msg = DevTypeId.light.value.to_bytes(2, endian) + msg
         msg += self.__pin.to_bytes(2, endian) + self.__zero_triggered.to_bytes(1, endian)
-        return (msg, length + 5)
+        return msg, length + 5
         # length = super.length + 2(dev id len) + 2(pin len) + 1(0 trig len) = length + 5
 
+    def str(self):
+        return 'Light=[' + super().str() + ' pin={}, 0 triggered={}]'.format(self.__pin, self.__zero_triggered)
 
-        
-    
+
 if __name__ == '__main__':
     light = Light(2, 'name', 12)
     light.turnOn()
