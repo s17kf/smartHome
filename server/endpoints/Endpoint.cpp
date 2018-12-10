@@ -23,12 +23,13 @@ Endpoint::~Endpoint() {
     delete[] name;
 }
 
-void Endpoint::print() {
-    std::cout<<"key: "<<key<<"name: ";
+std::string Endpoint::toString() {
+    std::string ret = "key=" + std::to_string(key) + ", name=\"";
     for(int i = 0; i < name_len; ++i){
-        std::cout<<name[i];
+        ret += name[i];
     }
-    std::cout<<std::endl;
+    ret += '\"';
+    return ret;
 }
 
 Endpoint* Endpoint::generateFromBytes(uchar *bytes, size_t expected_len, short *ret_name_len) {
@@ -44,4 +45,9 @@ Endpoint* Endpoint::generateFromBytes(uchar *bytes, size_t expected_len, short *
     memcpy(name, &bytes[sizeof(key) + sizeof(name_len)], name_len);
     Endpoint *ret = new Endpoint(key, name, name_len);
     return ret;
+}
+
+void Endpoint::cpy(void *dest, const void *src, size_t num, uint *index) {
+    memcpy(dest, src, num);
+    *index += num;
 }

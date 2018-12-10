@@ -17,11 +17,12 @@ public:
     Endpoint(const Endpoint &org);
     ~Endpoint();
 
-    void print();
-
+    virtual std::string toString();
     static Endpoint* generateFromBytes(uchar *bytes, size_t expected_len, short *name_len = nullptr);
+    // TODO: endpoint virtual = 0
 
-
+protected:
+    static void cpy(void *dest, const void *src, size_t num, uint *index);
 };
 
 

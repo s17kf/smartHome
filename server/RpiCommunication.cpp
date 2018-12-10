@@ -128,7 +128,8 @@ int RpiCommunication::addDevices(int client_fd) {
                     delete[] msg;
                     break;
                 }
-                rpiClient->addDevice(&msg[Const::name_len_index], received);
+                rpiClient->addDevice(&msg[Const::dev_type_index],
+                        received - Const::name_len_index);
                 delete[] msg;
                 uchar answer_ack[1];
                 answer_ack[0] = Packet::ack;

@@ -8,6 +8,7 @@
 #include <vector>
 #include "RpiCommunication.h"
 #include "endpoints/Endpoint.h"
+#include "logger/Logger.h"
 
 class RpiClient {
     ulong ip;
