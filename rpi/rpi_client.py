@@ -56,10 +56,13 @@ class Client:
             received_packet = Packet(received_packet.to_bytes(1, self.endian))
         except ValueError:
             Log.log(0, 'unresolved packet received: {}'.format(received_packet))
+            return None
             # TODO: some action with unresolved packet
         else:
             if received_packet == Packet.ack:
                 Log.log(1, 'received id is {}'.format(int.from_bytes(answer[1:3], self.endian)))
+            elif received_packet == Packet.nack:
+                raise IndexError('nack received - max rpis registered')
             else:
                 Log.log(0, 'received {} when expecting {}'.format(received_packet, Packet.ack))
                 # TODO: some action with wrong packet
@@ -111,7 +114,11 @@ if __name__ == '__main__':
     for dev in client.getDevices():
         Log.log(1, dev.str())
 
-    client.registerOnServer()
+    try:
+        client.registerOnServer()
+    except IndexError as error:
+        Log.log(0, "Failed to register on server: {}".format(error))
+        # TODO: do something more
     # print('clienr id is {id}'.format(id = client.getId()))
     Log.log(0, 'my id on server is {}'.format(client.getId()))
     Log.close()
