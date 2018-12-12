@@ -8,18 +8,32 @@
 #include <vector>
 #include "RpiCommunication.h"
 #include "endpoints/Endpoint.h"
-#include "logger/Logger.h"
+#include "common/Logger.h"
 
 class RpiClient {
     ulong ip;
     short id;
+    /**
+     * registered_rpis = map< ip_adress, RpiClient *>
+     */
+    static std::map<short, RpiClient *> registered_rpis;
+    static std::set<ulong> ip_adresses;
+    static short last_registered_id;
     std::vector<Endpoint *> devices;
 
 public:
     RpiClient(ulong ip, short id);
     ~RpiClient();
-    void addDevice(uchar *codedDevice, size_t size);
+    Endpoint *addDevice(uchar *codedDevice, size_t size);
     void printAllDevices();
+    static bool isIpInUse(ulong ip);
+    static bool isRegisteredId(short id);
+    static RpiClient* getRpiClient(short id);
+    static short getNextFreeId();
+
+    ulong getIp() const;
+
+    short getId() const;
 };
 
 

@@ -13,10 +13,13 @@ typedef unsigned long ulong;
 
 class Const {
 public:
-    static const ssize_t max_rpis = 5;
-    static const __time_t answer_timeout = 5;
-    static const uint name_len_index = 5;
-    static const uint dev_type_index = 3;
+    static const ssize_t max_rpis = 1;
+    static const time_t answer_timeout = 5;
+    static const uint rpi_id_index = 3;
+    static const uint dev_key_index = 7;
+    static const uint dev_type_index = 5;
+
+    static std::string ipToString(ulong ip);
 
 private:
     Const() = default;

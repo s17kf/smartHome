@@ -13,4 +13,4 @@ add_executable(server main.cpp
         Server.cpp Server.h
         RpiClient.cpp RpiClient.h
         endpoints/Endpoint.cpp endpoints/Endpoint.h
-        logger/Logger.cpp logger/Logger.h endpoints/Light.cpp endpoints/Light.h endpoints/Shade.cpp endpoints/Shade.h)
+        common/Logger.cpp common/Logger.h endpoints/Light.cpp endpoints/Light.h endpoints/Shade.cpp endpoints/Shade.h Const.cpp Answer.cpp Answer.h common/Atomic.cpp common/Atomic.h)

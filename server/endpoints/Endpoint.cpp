@@ -32,22 +32,19 @@ std::string Endpoint::toString() {
     return ret;
 }
 
-Endpoint* Endpoint::generateFromBytes(uchar *bytes, size_t expected_len, short *ret_name_len) {
-    short key;
-    short name_len;
-    memcpy(&key, bytes, sizeof(key));
-    memcpy(&name_len, &bytes[sizeof(key)], sizeof(name_len));
-    //TODO: if more than expected_size -  throw exception (broken msg)
-    if(ret_name_len != nullptr){
-        *ret_name_len = name_len;
-    }
-    uchar name[name_len];
-    memcpy(name, &bytes[sizeof(key) + sizeof(name_len)], name_len);
-    Endpoint *ret = new Endpoint(key, name, name_len);
-    return ret;
-}
-
 void Endpoint::cpy(void *dest, const void *src, size_t num, uint *index) {
     memcpy(dest, src, num);
     *index += num;
+}
+
+short Endpoint::getKey() const {
+    return key;
+}
+
+unsigned char *Endpoint::getName() const {
+    return name;
+}
+
+short Endpoint::getName_len() const {
+    return name_len;
 }

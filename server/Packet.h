@@ -14,6 +14,8 @@ public:
     static const uchar ack = 0x01;
     static const uchar reg = 0x02;     //registration
     static const uchar dev = 0x03;
+    static const uchar get = 0x04;
+    static const uchar val = 0x06;
     static const uchar all = 0xf0;
     static const uchar end = 0x0f;
     static const uchar exit = 0xff;

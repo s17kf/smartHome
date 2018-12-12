@@ -12,18 +12,27 @@
 #include <arpa/inet.h>
 #include <map>
 #include <set>
+#include <mutex>
+#include <queue>
+#include <condition_variable>
 
 #include "exceptions.h"
 #include "Const.h"
+#include "Answer.h"
 
 class RpiCommunication {
     struct sockaddr_in address;
     int address_len;
     int socket_fd;
     int opt;
-    short last_registered_id;
-    std::map<ulong, short> registered_rpis; //key - rpi's ip, value - rpi identifier
-    std::set<short> ids_in_use;
+    std::mutex answers_mtx;
+    std::condition_variable answers_cv;
+    std::queue<Answer *> answers_q;
+    std::set<int> readfds_set;
+    std::set<int> writefds_set;
+    bool stopped;
+
+    // TODO: delete last regirstered , map and set from here, now it is in rpi client class
     
 public:
     RpiCommunication(int port);
@@ -32,11 +41,20 @@ public:
     ssize_t readMsg(int client_socket, unsigned char *buffer, const size_t length);
     ssize_t sendMsg(int client_socket, unsigned char *msg, size_t length);
     ssize_t sendEncodedMsg(int client_socket, unsigned char *msg, size_t length);
-    void closeConnection(int client_socket);
-    int raspberryRegistrate(int client_socket, ulong ip);
+//    void closeConnection(int client_socket);
+    void run();
+    void answering();
+    void stop();
+
+protected:
+    uint getIpFromSocket(int client_fd);
+    short addNewRpiClient(int client_fd);
+    void answer(int client_fd, uchar packet);
+    void answer(int client_fd, uchar packet, short val);
+    void addAnswer(Answer *answer);
+    void closeConnection(int client_fd);
 
 private:
-    int addDevices(int client_fd);
 
 };
 

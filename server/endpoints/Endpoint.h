@@ -8,17 +8,23 @@
 #include "../Const.h"
 
 class Endpoint {
-    int key;
+    short key;
     unsigned char *name;
-    int name_len;
+    short name_len;
 
 public:
     Endpoint(int key, uchar *name, size_t name_len);
     Endpoint(const Endpoint &org);
     ~Endpoint();
 
+    short getKey() const;
+
+    unsigned char *getName() const;
+
+    short getName_len() const;
+
     virtual std::string toString();
-    static Endpoint* generateFromBytes(uchar *bytes, size_t expected_len, short *name_len = nullptr);
+//    virtual Endpoint* generateFromBytes(uchar *bytes, size_t expected_len, short *name_len = nullptr) = 0;
     // TODO: endpoint virtual = 0
 
 protected:
