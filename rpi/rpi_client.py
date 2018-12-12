@@ -46,8 +46,10 @@ class Client:
 
     def registerOnServer(self):
         self.__con.connect()
+        Log.log(2, 'connected to server');
         #TODO: cath exception if cannot connect
         self.__con.sendFormattedMsg(Packet.reg.value)
+        time.sleep(4)
         answer_length = int.from_bytes(self.__con.recv(2), self.endian)
         Log.log(5, 'get answer length {} bytes'.format(answer_length))
         answer = self.__con.recv(answer_length - 2)
@@ -69,7 +71,7 @@ class Client:
         self.__id = int.from_bytes(answer[1:3], self.endian)
         for device in self.__devices:
             msg, length = device.generateMsg()
-            msg = self.__id.to_bytes(2, self.endian) + Packet.dev.value + msg
+            msg = Packet.dev.value + self.__id.to_bytes(2, self.endian) + msg
             sent = self.__con.sendFormattedMsg(msg)
             Log.log(3, 'sent {} bytes: {}'.format(sent, device.str()))
             answer_length = int.from_bytes(self.__con.recv(2), self.endian)
@@ -91,7 +93,7 @@ class Client:
                     # TODO: do some action if unresolved
                     # TODO: test all cases
             #TODO: repeat if nack or delete endpoint device
-        self.__con.sendFormattedMsg(self.__id.to_bytes(2, self.endian) + Packet.end.value)
+        self.__con.sendFormattedMsg(Packet.end.value + self.__id.to_bytes(2, self.endian))
         self.__con.disconnect()
         
 
