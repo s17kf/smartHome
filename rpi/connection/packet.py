@@ -1,4 +1,6 @@
 from enum import Enum
+from logger.logger import Log
+
 
 class Packet(Enum):
     nack    =   b'\x00'
@@ -10,3 +12,15 @@ class Packet(Enum):
     all     =   b'\xf0'
     end     =   b'\x0f'
     exit    =   b'\xff'
+
+    @staticmethod
+    def to_packet(value):
+        try:
+            packet = Packet(value)
+        except ValueError:
+            Log.log(0, 'unresolved packet received: {}'.format(value))
+            return None
+            # TODO: some action with unresolved packet
+        else:
+            return packet
+

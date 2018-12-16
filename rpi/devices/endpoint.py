@@ -1,7 +1,11 @@
-class Endpoint:    
+from threading import Event
+
+
+class Endpoint:
     def __init__(self, key, name):
         self.__key = key
         self.__name = name
+        self.__registered = Event()
 
     def getKey(self):
         return self.__key
@@ -19,4 +23,13 @@ class Endpoint:
 
     def str(self):
         return 'key={}, name=\'{}\''.format(self.__key, self.__name)
+
+    def setRegistered(self, val):
+        if val:
+            self.__registered.set()
+        else:
+            self.__registered.clear()
+
+    def isRegistered(self):
+        return self.__registered.isSet()
 

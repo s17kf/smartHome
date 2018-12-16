@@ -1,33 +1,37 @@
 #!/usr/bin/python3
 from devices import initialize
-from connection.connection import Connection
 from connection.packet import Packet
-import time
 from logger.logger import Log
+import threading
+from connection.my_socket import MySocket
 
 
 class Client:
-    def __init__(self, devs_file_path, server_ip, port = 1234):
+    def __init__(self, devs_file_path, server_ip, port = 1234, timeout = 2):
         self.endian = 'little'      # #TODO: endians correctly
-        self.__connected = False
+        # self.__connected = False
         self.__devices = []
-        self.__con = Connection(port, server_ip)
-#        self.__server_ip = server_ip
-#        self.__port = port
+        # self.__con = Connection(port, server_ip)
+        self.__server_ip = server_ip
+        self.__port = port
         self.__createDevicesList(devs_file_path)
         self.__id = None
+        self.__id_event = threading.Event()
+        self.__registered = threading.Event()
+        self.__timeout = timeout
+        self.__stopped = threading.Event()
+        self.__main_thread = threading.Thread(target=self.main)
+
+    def stop(self):
+        self.__stopped.set()
+        self.__main_thread.join()
+        Log.log(0, 'client main thread joined')
 
     def getDevices(self):
         return self.__devices
 
     def getId(self):
         return self.__id
-
-#    def setPort(self, port):
-#        self.__port = port
-#    def setServerIp(self, server_ip):
-#        self.__server_ip = server_ip
-# TODO: set port and ip check Connection class too
 
     def __createDevicesList(self, devs_file_path):
         with open(devs_file_path, 'r') as devices_file:
@@ -44,84 +48,69 @@ class Client:
                 except ValueError as error:
                     Log.log(1, '{} at line {}: {}'.format(devs_file_path, current_line, error))
 
-    def registerOnServer(self):
-        self.__con.connect()
-        Log.log(2, 'connected to server');
-        #TODO: cath exception if cannot connect
-        self.__con.sendFormattedMsg(Packet.reg.value)
-        time.sleep(4)
-        answer_length = int.from_bytes(self.__con.recv(2), self.endian)
-        Log.log(5, 'get answer length {} bytes'.format(answer_length))
-        answer = self.__con.recv(answer_length - 2)
-        received_packet = answer[0]
+    def main(self):
+        while not self.__registered.isSet() and not self.__stopped.isSet():
+            self.register_on_server()
+            if self.__registered.isSet():
+                break
+            self.__stopped.wait(self.__timeout)
+
+        while not self.__stopped.is_set():
+            Log.log(1, 'waiting for stop')
+            self.__stopped.wait(self.__timeout)
+
+    def register_on_server(self):
+        socket = MySocket()
+        socket.connect(self.__server_ip, self.__port)
+        Log.log(1, "connected to server")
+        msg = (3).to_bytes(2, self.endian)
+        msg += Packet.reg.value
         try:
-            received_packet = Packet(received_packet.to_bytes(1, self.endian))
-        except ValueError:
-            Log.log(0, 'unresolved packet received: {}'.format(received_packet))
-            return None
-            # TODO: some action with unresolved packet
-        else:
-            if received_packet == Packet.ack:
-                Log.log(1, 'received id is {}'.format(int.from_bytes(answer[1:3], self.endian)))
-            elif received_packet == Packet.nack:
-                raise IndexError('nack received - max rpis registered')
+            socket.mysend(msg)
+            answer = self.get_answer(socket)
+            Log.log(2, "received msg {}, packet is {}".format(answer, answer[0]))
+            packet = Packet.to_packet(answer[0].to_bytes(1, self.endian))
+            if packet == Packet.ack:
+                self.__id = int.from_bytes(answer[1:3], self.endian)
+                Log.log(3, 'received id is {}'.format(self.__id))
+            elif packet == Packet.nack:
+                raise RuntimeError('nack received, reg refused by server')
             else:
-                Log.log(0, 'received {} when expecting {}'.format(received_packet, Packet.ack))
-                # TODO: some action with wrong packet
-        self.__id = int.from_bytes(answer[1:3], self.endian)
-        for device in self.__devices:
-            msg, length = device.generateMsg()
-            msg = Packet.dev.value + self.__id.to_bytes(2, self.endian) + msg
-            sent = self.__con.sendFormattedMsg(msg)
-            Log.log(3, 'sent {} bytes: {}'.format(sent, device.str()))
-            answer_length = int.from_bytes(self.__con.recv(2), self.endian)
-            answer = self.__con.recv(answer_length - 2)
-            received_packet = answer[0]
-            try:
-                received_packet = Packet(received_packet.to_bytes(1, self.endian))
-            except ValueError:
-                Log.log(0, 'unresolved packet received: {}'.format(received_packet))
-                # TODO: some action for that
-                # TODO: test this case
-            else:
-                if received_packet == Packet.ack:
-                    Log.log(2, 'successful sent device {} to server'.format(device.getKey()))
-                elif received_packet == Packet.nack:
-                    Log.log(1, 'Failed to send device {} to server'.format(device.getKey()))
+                # Log.log(3, 'received packet {} when expecting ack'.format(packet))
+                raise RuntimeError('unresolved packet received {}, expecting ack/nack'.format(packet))
+            for device in self.__devices:
+                msg, length = device.generateMsg()
+                msg = (length + 5).to_bytes(2, self.endian) + Packet.dev.value + \
+                      self.__id.to_bytes(2, self.endian) + msg
+                socket.mysend(msg)
+                answer = self.get_answer(socket)
+                packet = Packet.to_packet(answer[0].to_bytes(1, self.endian))
+                if packet == Packet.ack:
+                    dev_id = int.from_bytes(answer[1:3], self.endian)
+                    Log.log(3, 'device {} successful sent'.format(dev_id))
+                elif packet == Packet.nack:
+                    dev_id = int.from_bytes(answer[1:3], self.endian)
+                    Log.log(3, 'failed to send device {}'.format(dev_id))
                 else:
-                    Log.log(0, 'unresolved answer received: {}'.format(received_packet))
-                    # TODO: do some action if unresolved
-                    # TODO: test all cases
-            #TODO: repeat if nack or delete endpoint device
-        self.__con.sendFormattedMsg(Packet.end.value + self.__id.to_bytes(2, self.endian))
-        self.__con.disconnect()
-        
+                    Log.log(3, 'receive   d packet {} when expecting ack'.format(packet))
+                    raise RuntimeError('unresloved packet received')
+            msg = (5).to_bytes(2, self.endian) + Packet.end.value + self.__id.to_bytes(2, self.endian)
+            socket.mysend(msg)
+            Log.log(2, 'successfully registered on server')
+            socket.close()
+            self.__registered.set()
+        except RuntimeError as e:
+            Log.log(0, 'registering failed: {} ... closing connection'.format(e))
+            socket.close()
 
-if __name__ == '__main__':
-    #REG = b'\x02'
-    #ACK = b'\x01'
-    port = 1234
-    server_ip = '192.168.1.19'
-    rpi_key = 12
-    #TODO: rpi_key port and ip from file or other better way
-    devices_path = 'devices.conf'
-    log_filepath = 'logs/file.log'
-    Log.init(log_filepath, 5)
-    Log.log(0, 'server parameters: port = {}, ip = {}'.format(port, server_ip))
-    #TODO: path from file or something
+    def get_answer(self, socket):
+        answer_len = socket.myreceive(2)
+        answer_len = int.from_bytes(answer_len, self.endian)
+        answer = socket.myreceive(answer_len - 2)
+        return answer
 
-    client = Client(devices_path, server_ip, port)
+    def start_work(self):
+        self.__main_thread.start()
+        # self.__answer_service_thread.start()
 
-    Log.log(0, 'configured {} devices'.format(len(client.getDevices())))
-    for dev in client.getDevices():
-        Log.log(1, dev.str())
-
-    try:
-        client.registerOnServer()
-    except IndexError as error:
-        Log.log(0, "Failed to register on server: {}".format(error))
-        # TODO: do something more
-    # print('clienr id is {id}'.format(id = client.getId()))
-    Log.log(0, 'my id on server is {}'.format(client.getId()))
-    Log.close()
 
