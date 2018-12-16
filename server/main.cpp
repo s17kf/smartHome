@@ -23,10 +23,10 @@ void signalHandler(int signum){
         rpi_communication_thread.join();
         log(0, "one thread joined, waiting for second");
     }
-    if(rpi_answering_thread.joinable()) {
-        rpi_answering_thread.join();
-        log(0, "other thread joined ending program");
-    }
+//    if(rpi_answering_thread.joinable()) {
+//        rpi_answering_thread.join();
+//        log(0, "other thread joined ending program");
+//    }
     logClose();
     delete rpi_communication;
 
@@ -41,13 +41,13 @@ int main(){
 
     rpi_communication = new RpiCommunication(1234);
     rpi_communication_thread = std::thread(&RpiCommunication::run, rpi_communication);
-    rpi_answering_thread = std::thread(&RpiCommunication::answering, rpi_communication);
+//    rpi_answering_thread = std::thread(&RpiCommunication::answering, rpi_communication);
 
     log(0, "communication with raspberry is going in other thread");
     rpi_communication_thread.join();
     log(0, "one thread joined, waiting for second");
-    rpi_answering_thread.join();
-    log(0, "other thread joined ending program");
+//    rpi_answering_thread.join();
+//    log(0, "other thread joined ending program");
     logClose();
     delete rpi_communication;
     return 0;

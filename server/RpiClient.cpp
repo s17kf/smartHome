@@ -6,15 +6,16 @@
 #include "endpoints/Light.h"
 #include "endpoints/Shade.h"
 
-std::map<short, RpiClient *> RpiClient::registered_rpis;
-std::set<ulong> RpiClient::ip_adresses;
-short RpiClient::last_registered_id = 0;
+std::map<short, RpiClient *> RpiClient::registeredRpis;
+std::set<ulong> RpiClient::ipAddresses;
+short RpiClient::lastRegisteredId = 0;
 
 RpiClient::RpiClient(ulong ip, short id) :ip(ip), id(id) {
     // TODO: throw if id already in use
-    registered_rpis.insert(std::pair<short, RpiClient *>(id, this));
-    ip_adresses.insert(ip);
-    last_registered_id = id;
+    registeredRpis.insert(std::pair<short, RpiClient *>(id, this));
+    ipAddresses.insert(ip);
+    lastRegisteredId = id;
+    lastActivityTime = time(nullptr);
 //    log(10, "new rpi client added (RpiClient constructor)");
 }
 
@@ -22,23 +23,23 @@ RpiClient::~RpiClient() {
     for(auto device : devices){
         delete device;
     }
-    auto this_in_registered = registered_rpis.find(id);
-    if(this_in_registered != registered_rpis.end()){
-        registered_rpis.erase(this_in_registered);
+    auto this_in_registered = registeredRpis.find(id);
+    if(this_in_registered != registeredRpis.end()){
+        registeredRpis.erase(this_in_registered);
     }
     else{
         log(0, "failed to find client id %d when deleting it", id);
     }
-    auto ip_in_set = ip_adresses.find(ip);
-    if(ip_in_set != ip_adresses.end()){
-        ip_adresses.erase(ip_in_set);
+    auto ip_in_set = ipAddresses.find(ip);
+    if(ip_in_set != ipAddresses.end()){
+        ipAddresses.erase(ip_in_set);
     }
     else{
         char client_ip_str[16];
         inet_ntop(AF_INET, &ip, client_ip_str, 16);
-        log(0, "there is no rpi client in registered_rpis when deleting client %s",
+        log(0, "there is no rpi client in registeredRpis when deleting client %s",
                 client_ip_str);
-//        log(0, "there is no client id (%d) in ip_adresses set", id);
+//        log(0, "there is no client id (%d) in ipAddresses set", id);
     }
 }
 
@@ -65,6 +66,7 @@ Endpoint* RpiClient::addDevice(uchar *codedDevice, size_t expected_size) {
             log(0, "unresolved device type received %d", dev_type_id);
             return nullptr;
     }
+
 //    log(3, "added new device: %s", new_device->toString().c_str());
     devices.push_back(new_device);
     return new_device;
@@ -78,33 +80,26 @@ void RpiClient::printAllDevices() {
 }
 
 bool RpiClient::isIpInUse(ulong ip) {
-    return(ip_adresses.find(ip) != ip_adresses.end());
+    return(ipAddresses.find(ip) != ipAddresses.end());
 }
 
 bool RpiClient::isRegisteredId(short id) {
-    return(registered_rpis.find(id) != registered_rpis.end());
+    return(registeredRpis.find(id) != registeredRpis.end());
 }
 
 RpiClient* RpiClient::getRpiClient(short id) {
-    return registered_rpis.find(id)->second;
+    return registeredRpis.find(id)->second;
 }
 
 short RpiClient::getNextFreeId() {
-    short new_id = (last_registered_id + 1) % Const::max_rpis;
+    short new_id = (lastRegisteredId + 1) % Const::max_rpis;
     while(true){
         if(!isRegisteredId(new_id))
             break;
-        if(new_id == last_registered_id)
+        if(new_id == lastRegisteredId)
             return -1;
-        ++new_id;
+        new_id = (new_id + 1) % Const::max_rpis;
     }
     return new_id;
 }
 
-ulong RpiClient::getIp() const {
-    return ip;
-}
-
-short RpiClient::getId() const {
-    return id;
-}

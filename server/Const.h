@@ -10,14 +10,16 @@
 typedef unsigned int uint;
 typedef unsigned char uchar;
 typedef unsigned long ulong;
+typedef unsigned short ushort;
 
 class Const {
 public:
     static const ssize_t max_rpis = 1;
-    static const time_t answer_timeout = 5;
+    static const time_t answer_timeout = 2;
+    static const time_t max_no_activity_time = 5;
     static const uint rpi_id_index = 3;
     static const uint dev_key_index = 7;
-    static const uint dev_type_index = 5;
+    static const ushort dev_type_index = 5;
 
     static std::string ipToString(ulong ip);
 

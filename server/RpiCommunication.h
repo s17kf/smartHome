@@ -15,6 +15,7 @@
 #include <mutex>
 #include <queue>
 #include <condition_variable>
+#include <thread>
 
 #include "exceptions.h"
 #include "Const.h"
@@ -22,14 +23,15 @@
 
 class RpiCommunication {
     struct sockaddr_in address;
-    int address_len;
-    int socket_fd;
+    int addressLen;
+    int socketFd;
     int opt;
-    std::mutex answers_mtx;
-    std::condition_variable answers_cv;
-    std::queue<Answer *> answers_q;
-    std::set<int> readfds_set;
-    std::set<int> writefds_set;
+    std::mutex answersMtx;
+    std::condition_variable answersCv;
+    std::queue<Answer *> answersQueue;
+    std::map<int, time_t > readfdsSet;
+    std::set<int> writefdsSet;
+    std::set<std::thread *> activeClientConnections;
     bool stopped;
 
     // TODO: delete last regirstered , map and set from here, now it is in rpi client class
@@ -43,19 +45,15 @@ public:
     ssize_t sendEncodedMsg(int client_socket, unsigned char *msg, size_t length);
 //    void closeConnection(int client_socket);
     void run();
-    void answering();
     void stop();
 
 protected:
-    uint getIpFromSocket(int client_fd);
-    short addNewRpiClient(int client_fd);
-    void answer(int client_fd, uchar packet);
-    void answer(int client_fd, uchar packet, short val);
-    void addAnswer(Answer *answer);
+    static uint getIpFromSocket(int client_fd);
+    static short addNewRpiClient(int client_fd);
     void closeConnection(int client_fd);
 
 private:
-
+    static void clientConnection(int clientSocket);
 };
 
 
