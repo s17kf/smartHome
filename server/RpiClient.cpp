@@ -5,6 +5,7 @@
 #include "RpiClient.h"
 #include "endpoints/Light.h"
 #include "endpoints/Shade.h"
+#include "endpoints/Thermometer.h"
 
 std::map<short, RpiClient *> RpiClient::registeredRpis;
 std::set<ulong> RpiClient::ipAddresses;
@@ -21,7 +22,7 @@ RpiClient::RpiClient(ulong ip, short id) :ip(ip), id(id) {
 
 RpiClient::~RpiClient() {
     for(auto device : devices){
-        delete device;
+        delete device.second;
     }
     auto this_in_registered = registeredRpis.find(id);
     if(this_in_registered != registeredRpis.end()){
@@ -48,34 +49,38 @@ RpiClient::~RpiClient() {
  * @param expected_size - size of codedDevice
  */
 Endpoint* RpiClient::addDevice(uchar *codedDevice, size_t expected_size) {
-    short name_len;
-    Endpoint *new_device;
-    short dev_type_id;
-    memcpy(&dev_type_id, codedDevice, sizeof(dev_type_id));
-    switch (dev_type_id){
+    short nameLen;
+    Endpoint *newDevice;
+    ushort devTypeId;
+    memcpy(&devTypeId, codedDevice, sizeof(devTypeId));
+    devTypeId = ntohs(devTypeId);
+    switch (devTypeId){
         case DevTypeId::light:
             log(2, "light device received");
-            new_device = Light::generateFromBytes(&codedDevice[sizeof(dev_type_id)],
-                    expected_size - 2, &name_len);
+            newDevice = Light::generateFromBytes(&codedDevice[sizeof(devTypeId)],
+                    expected_size - sizeof(devTypeId), &nameLen);
             break;
         case DevTypeId::shade:
-            new_device = Shade::generateFromBytes(&codedDevice[sizeof(dev_type_id)],
-                    expected_size - 2, &name_len);
+            newDevice = Shade::generateFromBytes(&codedDevice[sizeof(devTypeId)],
+                    expected_size - sizeof(devTypeId), &nameLen);
+            break;
+        case DevTypeId::thermometer:
+            newDevice = Thermometer::generateFromBytes(&codedDevice[sizeof(devTypeId)],
+                    expected_size - sizeof(devTypeId), &nameLen);
             break;
         default:
-            log(0, "unresolved device type received %d", dev_type_id);
+            log(0, "unresolved device type received %d", devTypeId);
             return nullptr;
     }
 
-//    log(3, "added new device: %s", new_device->toString().c_str());
-    devices.push_back(new_device);
-    return new_device;
+//    log(3, "added new device: %s", newDevice->toString().c_str());
+    devices.insert(std::pair<int, Endpoint*>(newDevice->getKey() ,newDevice));
+    return newDevice;
 }
 
 void RpiClient::printAllDevices() {
     for(auto device : devices){
-        log(4, device->toString().c_str());
-//        device->toString();
+        log(4, device.second->toString().c_str());
     }
 }
 

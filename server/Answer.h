@@ -13,9 +13,11 @@ class Answer {
     short recipient_id;
     size_t msg_len;
     uchar *msg;
+    bool last_msg_on_socket;
 
 public:
-    Answer(const int socket_fd, const short recipient_id, const size_t msg_len, const uchar *msg);
+    Answer(const int socket_fd, const short recipient_id, const size_t msg_len,
+            const uchar *msg, bool last_msg_on_socket = false);
     ~Answer();
 
     int getSocket_fd() const;
@@ -25,6 +27,8 @@ public:
     size_t getMsg_len() const;
 
     uchar *getMsg() const;
+
+    bool isLast_msg_on_socket() const;
 };
 
 

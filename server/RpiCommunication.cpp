@@ -45,27 +45,6 @@ int RpiCommunication::getConnection(uint *ip) {
     return client_socket;
 }
 
-ssize_t RpiCommunication::readMsg(int client_socket, unsigned char *buffer, const size_t length){
-    return read( client_socket , buffer, length);
-}
-
-ssize_t RpiCommunication::sendMsg(int client_socket, unsigned char *msg, size_t length){
-    return send(client_socket, msg , length, 0 );
-}
-
-ssize_t RpiCommunication::sendEncodedMsg(int client_socket, unsigned char *msg, size_t length) {
-    short encoded_length = length + sizeof(encoded_length);
-//    std::cout<<"sending encoded " << length <<"bytes msg"<<std::endl;
-    uchar encoded_msg[length + 2];// = new uchar(length + 2);
-    memcpy(encoded_msg, &encoded_length, 2);
-    memcpy(&encoded_msg[2], msg, length);
-    return send(client_socket, encoded_msg , length + 2 , 0 );
-}
-
-//void RpiCommunication::closeConnection(int client_socket) {
-//    close(client_socket);
-//}
-
 int RpiCommunication::getSocket_fd() const {
     return socketFd;
 }
@@ -73,7 +52,6 @@ int RpiCommunication::getSocket_fd() const {
 void RpiCommunication::run() {
     fd_set readfds;
     timeval timeout;
-    readfdsSet.insert(std::pair<int, time_t>(socketFd, time(nullptr)));
     while(true) {
         if(Atomic::get(&stopped))
             break;
@@ -132,13 +110,6 @@ void RpiCommunication::stop() {
     log(5, "stopped set to true");
 }
 
-void RpiCommunication::closeConnection(int client_socket) {
-    log(5, "closing socker %d", client_socket);
-    readfdsSet.erase(client_socket);
-    close(client_socket);
-    log(5, "socked %d closed", client_socket);
-}
-
 void RpiCommunication::clientConnection(int clientSocket) {
     while(true){
         log(5, "client connection");
@@ -152,6 +123,12 @@ void RpiCommunication::clientConnection(int clientSocket) {
             log(1, "dev received");
             auto rpi_id = dev->getRpiId();
             auto rpiClient = RpiClient::getRpiClient(rpi_id);
+            if(rpiClient == nullptr) {
+                log(0, "There is no client id %d", rpi_id);
+                sendNack(clientSocket, rpi_id);
+                // TODO: send end ir something
+                continue;
+            }
             auto newDevice = rpiClient->addDevice(dev->getCodedDevice(),
                     dev->getCodedDevLen());
             if(newDevice == nullptr){
@@ -173,8 +150,22 @@ void RpiCommunication::clientConnection(int clientSocket) {
                 delete msg;
                 continue;
             }
+        }else if(auto val = dynamic_cast<ValDouble *>(msg)){
+            log(2, "val from %d, %d=%f recveived", val->getRpiId(), val->getDevId(),
+            val->getVal());
+            sendAck(clientSocket, val->getDevId());
+            delete val;
+            close(clientSocket);
+            break;
         }else if(auto end = dynamic_cast<End *>(msg)){
             log(1, "end received, closing socket");
+//            ushort client_id = end->getVal();
+            auto rpiClient = RpiClient::getRpiClient(end->getVal());
+            if(rpiClient == nullptr){
+                log(1, "End: bad client id %d", end->getVal());
+            } else {
+                rpiClient->printAllDevices();
+            }
             delete msg;
             close(clientSocket);
             break;
@@ -207,7 +198,21 @@ void RpiCommunication::clientConnection(int clientSocket) {
             close(clientSocket);
             break;
         }
-
     }
+    // TODO: erase client connection thread from connections thread
     log(2, "client connection ended");
+}
+
+void RpiCommunication::sendNack(int clientSocket, ushort val) {
+    Nack *nack = new Nack(val);
+    auto sent = nack->send(clientSocket);
+    log(2, "Sent %d bytes: %s", sent, nack->toString().c_str());
+    delete nack;
+}
+
+void RpiCommunication::sendAck(int clientSocket, ushort val) {
+    auto *ack = new Ack(val);
+    auto sent = ack->send(clientSocket);
+    log(2, "sent %d bytes: %s", sent, ack->toString().c_str());
+    delete ack;
 }

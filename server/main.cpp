@@ -23,10 +23,6 @@ void signalHandler(int signum){
         rpi_communication_thread.join();
         log(0, "one thread joined, waiting for second");
     }
-//    if(rpi_answering_thread.joinable()) {
-//        rpi_answering_thread.join();
-//        log(0, "other thread joined ending program");
-//    }
     logClose();
     delete rpi_communication;
 

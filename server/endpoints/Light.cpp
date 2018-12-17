@@ -3,6 +3,8 @@
 //
 
 #include <cstring>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "Light.h"
 
 Light::Light(short key, uchar *name, size_t name_len, short pin, bool zero_trig)
@@ -21,15 +23,18 @@ std::string Light::toString() {
 
 Light* Light::generateFromBytes(uchar *bytes, size_t expected_len, short *ret_name_len) {
     short key;
-    short name_len;
+    ushort name_len;
     short pin;
     bool zero_triggered;
     uint index = 0;
     cpy(&key, bytes, sizeof(key), &index);
+    key = ntohs(key);
     cpy(&name_len, &bytes[index], sizeof(name_len), &index);
+    name_len = ntohs(name_len);
     uchar name[name_len];
     cpy(&name, &bytes[index], name_len, &index);
     cpy(&pin, &bytes[index], sizeof(pin), &index);
+    pin = ntohs(pin);
     cpy(&zero_triggered, &bytes[index], sizeof(zero_triggered), &index);
     //TODO: check if not bigger than expected size - throw ...
     return new Light(key, name, name_len, pin, zero_triggered);

@@ -16,7 +16,7 @@ class RpiClient {
     short id;
     time_t lastActivityTime;
     std::mutex last_activity_time_mtx;
-    std::vector<Endpoint *> devices;
+    std::map<ushort, Endpoint *> devices;
 
     /**
      * registered_rpis = map< ip_adress, RpiClient *>

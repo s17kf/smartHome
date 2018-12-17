@@ -14,7 +14,7 @@ typedef unsigned short ushort;
 
 class Const {
 public:
-    static const ssize_t max_rpis = 1;
+    static const ssize_t max_rpis = 2;
     static const time_t answer_timeout = 2;
     static const time_t max_no_activity_time = 5;
     static const uint rpi_id_index = 3;
@@ -31,7 +31,8 @@ private:
 
 enum DevTypeId{
     light = 1,
-    shade = 2
+    shade = 2,
+    thermometer = 3
 };
 
 #endif //SERVER_CONST_H

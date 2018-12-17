@@ -20,17 +20,13 @@
 #include "exceptions.h"
 #include "Const.h"
 #include "Answer.h"
+#include "RpiClient.h"
 
 class RpiCommunication {
     struct sockaddr_in address;
     int addressLen;
     int socketFd;
     int opt;
-    std::mutex answersMtx;
-    std::condition_variable answersCv;
-    std::queue<Answer *> answersQueue;
-    std::map<int, time_t > readfdsSet;
-    std::set<int> writefdsSet;
     std::set<std::thread *> activeClientConnections;
     bool stopped;
 
@@ -39,21 +35,19 @@ class RpiCommunication {
 public:
     RpiCommunication(int port);
     int getSocket_fd() const;
-    int getConnection(uint *ip);
-    ssize_t readMsg(int client_socket, unsigned char *buffer, const size_t length);
-    ssize_t sendMsg(int client_socket, unsigned char *msg, size_t length);
-    ssize_t sendEncodedMsg(int client_socket, unsigned char *msg, size_t length);
-//    void closeConnection(int client_socket);
     void run();
     void stop();
+
 
 protected:
     static uint getIpFromSocket(int client_fd);
     static short addNewRpiClient(int client_fd);
-    void closeConnection(int client_fd);
+    int getConnection(uint *ip);
 
 private:
     static void clientConnection(int clientSocket);
+    static void sendNack(int clientSocket, ushort val);
+    static void sendAck(int clientSocket, ushort val);
 };
 
 

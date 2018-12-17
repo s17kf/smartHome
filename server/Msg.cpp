@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
+#include <arpa/inet.h>
 #include "Msg.h"
 #include "common/Logger.h"
 
@@ -34,16 +35,26 @@ ssize_t readUntillDone(int socket, uchar *buffer, ssize_t len){
     while(readed < len){
         auto i = read(socket, &buffer[readed], len - readed);
         if(i < 0){
-            log(0, "Failed reading from socket: [Errno %d] %s",
+            log(5, "Failed reading from socket: [Errno %d] %s",
                     errno, strerror(errno));
             return i;
         } else if(i == 0){
-            log(0, "client socket is closed");
+            log(5, "client socket is closed");
             return 0;
         }
         readed += len;
     }
     return readed;
+}
+
+void ntohDouble(double *val){
+    uint size = sizeof(double);
+    auto *tab = reinterpret_cast<uchar *>(val);
+    for(int i = 0; i < size / 2; ++i){
+        uchar temp = tab[i];
+        tab[i] = tab[size - 1 - i];
+        tab[size - 1 - i] = temp;
+    }
 }
 
 
@@ -66,6 +77,7 @@ Msg* Msg::receiveMsg(int socket) {
     auto readed = readUntillDone(socket, (uchar *)&msgLen, sizeof(msgLen));
     if(readed <= 0)
         return nullptr;
+    msgLen = ntohs(msgLen);
     uchar msg[msgLen];
     memcpy(msg, &msgLen, sizeof(msgLen));
     readed = readUntillDone(socket, &msg[2], msgLen - 2);
@@ -82,6 +94,16 @@ Msg* Msg::receiveMsg(int socket) {
             return new Dev(msg, msgLen);
         case end:
             return new End(msg);
+        case val:
+            switch(msg[Val::valTypeIndex]){
+                case Val::int_v:
+                    return new ValInt(msg);
+                case Val::double_v:
+                    return new ValDouble(msg);
+                default:
+                    log(2, "unresolved val type in val msg received");
+                    return nullptr;
+            }
         default:
             log(2, "unresolved msg type received");
             return nullptr;
@@ -94,13 +116,14 @@ ssize_t Msg::send(int socket) const {
 
 Ack::Ack(ushort val) : Msg(5) {
     buffer[2] = ack;
+    val = htons(val);
     memcpy(&buffer[3], &val, sizeof(val));
 }
 
 ushort Ack::getVal() {
     ushort val;
     memcpy(&val, &buffer[3], sizeof(val));
-    return val;
+    return ntohs(val);
 }
 
 std::string Ack::toString() {
@@ -109,13 +132,14 @@ std::string Ack::toString() {
 
 Nack::Nack(ushort val) : Msg(5) {
     buffer[2] = nack;
+    val = htons(val);
     memcpy(&buffer[3], &val, sizeof(val));
 }
 
 ushort Nack::getVal() {
     ushort val;
     memcpy(&val, &buffer[3], sizeof(val));
-    return val;
+    return ntohs(val);
 }
 
 std::string Nack::toString() {
@@ -133,25 +157,61 @@ std::string Reg::toString() {
 ushort Dev::getRpiId() {
     ushort id;
     memcpy(&id, &buffer[Const::rpi_id_index], sizeof(id));
-    return id;
+    return ntohs(id);
 }
 
 ushort Dev::getDevId() {
     ushort id;
     memcpy(&id, &buffer[Const::dev_key_index], sizeof(id));
-    return id;
+    return ntohs(id);
 }
 
 std::string Dev::toString() {
-    return std::__cxx11::string();
+    return "Dev ..."; //std::__cxx11::string();
 }
 
 ushort End::getVal() {
     ushort val;
     memcpy(&val, &buffer[3], sizeof(val));
-    return val;
+    return ntohs(val);
 }
 
 std::string End::toString() {
     return "End" + std::to_string(getVal());
+}
+
+ushort Val::getRpiId() {
+    ushort id;
+    memcpy(&id, &buffer[Const::rpi_id_index], sizeof(id));
+    return ntohs(id);
+}
+
+ushort Val::getDevId() {
+    ushort id;
+    memcpy(&id, &buffer[devIdIndex], sizeof(id));
+    return ntohs(id);
+}
+;
+int ValInt::getVal() {
+    int val;
+    memcpy(&val, &buffer[valIndex], sizeof(val));
+    return ntohl(val);
+}
+
+std::string ValInt::toString() {
+    return "Int val=" + std::to_string(getVal());
+}
+
+double ValDouble::getVal() {
+//    auto val = reinterpret_cast<double *>(&buffer[valIndex]);
+//    return *val;
+//    long long temp = *((long long *)&buffer[valIndex]);
+
+    double val = *((double *)&buffer[valIndex]);
+    ntohDouble(&val);
+    return val;
+}
+
+std::string ValDouble::toString() {
+    return "Double val=" + std::to_string(getVal());
 }

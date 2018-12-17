@@ -14,6 +14,7 @@ protected:
         ack = 0x01,
         reg = 0x02,
         dev = 0x03,
+        val = 0x06,
         end = 0x0f
     };
     uchar *buffer;
@@ -71,5 +72,36 @@ public:
     ushort getVal();
     std::string toString() override;
 };
+
+class Val : public Msg{
+    friend class Msg;
+protected:
+    enum val_type{
+        int_v = 1,
+        double_v = 2
+    };
+    static const ushort valIndex = 8;
+    static const ushort valTypeIndex = 7;
+    static const ushort devIdIndex = 5;
+    Val(uchar *buffer, ushort len) : Msg(buffer, len) {}
+public:
+    ushort getRpiId();
+    ushort getDevId();
+};
+
+class ValInt : public Val{
+public:
+    ValInt(uchar *buffer): Val(buffer, 12) {}
+    int getVal();
+    std::string toString() override;
+};
+
+class ValDouble : public Val{
+public:
+    ValDouble(uchar *buffer) : Val(buffer, 16) {}
+    double getVal();
+    std::string toString() override;
+};
+
 
 #endif //SERVER_MSG_H
