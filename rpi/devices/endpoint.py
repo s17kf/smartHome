@@ -1,4 +1,6 @@
 from threading import Event
+from socket import htons
+import struct
 
 
 class Endpoint:
@@ -16,8 +18,8 @@ class Endpoint:
     def setName(self, new_name):
         self.__name = new_name
     
-    def generateMsg(self, endian = 'little'):
-        msg = self.__key.to_bytes(2, endian) + len(self.__name).to_bytes(2, endian)
+    def generateMsg(self, endian='little'):
+        msg = struct.pack('!HH', self.__key, len(self.__name))
         msg += self.__name.encode()
         return msg, 4 + len(self.__name)
 

@@ -1,11 +1,13 @@
-try:
-    from .endpoint import Endpoint
-    from .device_types import DevTypeCode
-    from .device_types import DevTypeId
-except SystemError:
-    from endpoint import Endpoint
-    from device_types import DevTypeCode
-    from device_types import DevTypeId
+# try:
+from .endpoint import Endpoint
+from .device_types import DevTypeCode
+from .device_types import DevTypeId
+from socket import htons
+import struct
+# except SystemError:
+#     from endpoint import Endpoint
+#     from device_types import DevTypeCode
+#     from device_types import DevTypeId
 
 class Light(Endpoint):
     def __init__(self, key, name, pin, zero_triggered = False):
@@ -21,11 +23,10 @@ class Light(Endpoint):
         #TODO
         print('turn off light is not implemented yet')
 
-    def generateMsg(self, endian = 'little'):
+    def generateMsg(self, endian='little'):
         msg, length = super().generateMsg(endian)
         # print('light super msg: {m}'.format(m=msg))
-        msg = DevTypeId.light.value.to_bytes(2, endian) + msg
-        msg += self.__pin.to_bytes(2, endian) + self.__zero_triggered.to_bytes(1, endian)
+        msg = struct.pack('!H', DevTypeId.light.value) + msg + struct.pack('!HB', self.__pin, self.__zero_triggered)
         return msg, length + 5
         # length = super.length + 2(dev id len) + 2(pin len) + 1(0 trig len) = length + 5
 

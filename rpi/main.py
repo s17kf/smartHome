@@ -30,6 +30,7 @@ client = Client(devices_path, server_ip, port)
 
 Log.log(0, 'configured {} devices'.format(len(client.getDevices())))
 for dev in client.getDevices():
+    # Log.log(1, dev.__dict__)
     Log.log(1, dev.str())
 
 client.start_work()

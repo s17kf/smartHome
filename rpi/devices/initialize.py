@@ -1,11 +1,12 @@
-try:
-    from .light import Light
-    from .shade import Shade
-    from .device_types import DevTypeCode
-except SystemError:
-    from light import Light
-    from shade import Shade
-    from device_codes import DevTypeCode
+# try:
+from .light import Light
+from .shade import Shade
+from .device_types import DevTypeCode
+from .thermometer import Thermometer
+# except SystemError:
+#     from light import Light
+#     from shade import Shade
+#     from device_codes import DevTypeCode
 
 def getNextArg(line, start = 0):
     i = start
@@ -36,7 +37,7 @@ def addLight(arg_line, key):
         elif zero_triggered_arg in ['1', 't', 'T', 'y', 'Y']:
             zero_triggered = True
         else:
-            raise ValueError ('bad 0 triggered value')
+            raise ValueError('bad 0 triggered value')
         name, i = getNextArg(arg_line, i+1)
     else:
         zero_triggered = False
@@ -53,6 +54,12 @@ def addShade(arg_line, key):
 #TODO: some values are ints
 
 
+def addThermometer(arg_line, key):
+    pin, i = getNextArg(arg_line)
+    name, i = getNextArg(arg_line, i+1)
+    return Thermometer(key, name, int(pin))
+
+
 def addDevice(line, key):
     devCode = line[0:3]
     try:
@@ -63,6 +70,10 @@ def addDevice(line, key):
         return addLight(line[4:], key)
     elif devCode == DevTypeCode.shade:
         return addShade(line[4:], key)
+    elif devCode == DevTypeCode.thermometer:
+        return addThermometer(line[4:], key)
+    else:
+        raise KeyError('not implemented endpoint type {}'.format(devCode))
 
 
 if __name__ == '__main__':
@@ -87,6 +98,3 @@ if __name__ == '__main__':
     for dev in devices:
         print(dev.__dict__)
 
-
-
-    

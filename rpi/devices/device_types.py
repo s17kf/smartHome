@@ -4,10 +4,12 @@ from enum import Enum
 class DevTypeCode(Enum):
     light   =   'lig'
     shade   =   'shd'
+    thermometer = 'thm'
 
 class DevTypeId(Enum):
     light   =   1
     shade   =   2
+    thermometer = 3
 
 
 if __name__ == '__main__':

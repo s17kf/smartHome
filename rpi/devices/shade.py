@@ -1,11 +1,13 @@
-try:
-    from .endpoint import Endpoint
-    from .device_types import DevTypeCode
-    from .device_types import DevTypeId
-except SystemError:
-    from endpoint import Endpoint
-    from device_types import DevTypeCode
-    from device_types import DevTypeId
+# try:
+from .endpoint import Endpoint
+from .device_types import DevTypeCode
+from .device_types import DevTypeId
+from socket import htons
+import struct
+# except SystemError:
+#     from endpoint import Endpoint
+#     from device_types import DevTypeCode
+#     from device_types import DevTypeId
 
 class Shade(Endpoint):
     def __init__(self, key, name, pinA, pinB):
@@ -27,9 +29,8 @@ class Shade(Endpoint):
 
     def generateMsg(self, endian = 'little'):
         msg, length = super().generateMsg(endian)
-        msg = DevTypeId.shade.value.to_bytes(2, endian) + msg
-        msg += self.__pinA.to_bytes(2, endian) + self.__pinB.to_bytes(2, endian)
-        return (msg, length + 6)
+        msg = struct.pack('!H', DevTypeId.shade.value) + msg + struct.pack('!HH', self.__pinA, self.__pinB)
+        return msg, length + 6
         # length = super.length + 2(devid len) + 2(pin a len) + 2(pin b len) = length + 6
 
     def str(self):
