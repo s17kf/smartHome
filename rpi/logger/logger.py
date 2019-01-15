@@ -1,4 +1,5 @@
 import time
+import threading
 
 
 class Log:
@@ -9,10 +10,11 @@ class Log:
     def log(level, log_msg):
         indent = level * '-'
         log_time = time.asctime(time.localtime(time.time()))
+        thread = threading.current_thread()
         if Log.log_file is not None and not Log.log_file.closed:
-            written = Log.log_file.write('{}[{}] {}: {}\n'.format(indent, level, log_time, log_msg))
+            written = Log.log_file.write('{}[{}-{}] {}: {}\n'.format(indent, level, thread.name, log_time, log_msg))
         if level <= Log.stdout_min_lv:
-            print('{}[{}] {}: {}'.format(indent, level, log_time, log_msg))
+            print('{}[{}-{}] {}: {}'.format(indent, level, thread.name, log_time, log_msg))
 
     @staticmethod
     def init(filepath, std_output_min_lv = 0):

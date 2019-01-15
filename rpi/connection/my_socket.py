@@ -1,6 +1,6 @@
 import socket
 from logger.logger import Log
-
+import struct
 
 class MySocket:
 
@@ -37,4 +37,31 @@ class MySocket:
 
     def close(self):
         self.sock.close()
+
+    def bind(self, port):
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.sock.bind(('', port))
+
+    def listen(self, n):
+        self.sock.listen(n)
+
+    def accept(self):
+        return self.sock.accept()
+
+    def fileno(self):
+        return self.sock.fileno()
+
+    def get_sock(self):
+        return self.sock
+
+    def set_timeout(self, timeout):
+        self.sock.settimeout(timeout)
+
+    def get_msg(self):
+        msg_len = self.myreceive(2)
+        unpacked_len = struct.unpack('!H', msg_len)[0]
+        Log.log(3, 'received msg len is {}'.format(unpacked_len))
+        msg = self.myreceive(unpacked_len - 2)
+        return msg_len + msg
 

@@ -36,6 +36,15 @@ class Shade(Endpoint):
     def str(self):
         return 'Shade=[' + super().str() + ' pinA={}, pinB={}]'.format(self.__pinA, self.__pinB)
 
+    def setState(self, state):
+        if state == 0:
+            self.stop()
+        elif state == 1:
+            self.moveUp()
+        elif state == 2:
+            self.moveDown()
+        else:
+            raise KeyError('bad state value')
 
 if __name__ == '__main__':
     shade = Shade(1, 'shade name', 1, 2)

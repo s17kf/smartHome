@@ -7,8 +7,6 @@ from connection.my_socket import MySocket
 from devices.thermometer import Thermometer
 import struct
 from connection.msgtype import ValMsg
-from socket import htons
-from socket import ntohs
 
 
 class Client:
@@ -25,7 +23,7 @@ class Client:
         self.__registered = threading.Event()
         self.__timeout = timeout
         self.__stopped = threading.Event()
-        self.__main_thread = threading.Thread(target=self.main)
+        self.__main_thread = threading.Thread(target=self.main, name='client_t')
 
     def stop(self):
         self.__stopped.set()
@@ -34,6 +32,12 @@ class Client:
 
     def getDevices(self):
         return self.__devices
+
+    def getDevice(self, dev_key):
+        for device in self.__devices:
+            if device.getKey() == dev_key:
+                return device
+        raise IndexError('bad device key {}'.format(dev_key))
 
     def getId(self):
         return self.__id
@@ -140,7 +144,7 @@ class Client:
     def get_answer(self, socket):
         answer_len = socket.myreceive(2)
         # answer_len = int.from_bytes(answer_len, self.endian)
-        answer_len = struct.unpack('H', answer_len)[0]
+        answer_len = struct.unpack('!H', answer_len)[0]
         Log.log(5, 'answer len is {}'.format(answer_len))
         answer = socket.myreceive(answer_len - 2)
         return answer
