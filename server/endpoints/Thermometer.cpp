@@ -18,14 +18,29 @@ Thermometer* Thermometer::generateFromBytes(uchar *bytes, ushort expected_len, s
     ushort name_len;
     short pin;
     uint index = 0;
-    cpy(&key, bytes, sizeof(key), &index);
+    cpyFromBuffer(&key, bytes, sizeof(key), &index);
     key = ntohs(key);
-    cpy(&name_len, &bytes[index], sizeof(name_len), &index);
+    cpyFromBuffer(&name_len, &bytes[index], sizeof(name_len), &index);
     name_len = ntohs(name_len);
     uchar name[name_len];
-    cpy(&name, &bytes[index], name_len, &index);
-    cpy(&pin, &bytes[index], sizeof(pin), &index);
+    cpyFromBuffer(&name, &bytes[index], name_len, &index);
+    cpyFromBuffer(&pin, &bytes[index], sizeof(pin), &index);
     pin = ntohs(pin);
     //TODO: check if not bigger than expected size - throw ...
     return new Thermometer(key, name, name_len, pin);
+}
+
+std::pair<uchar *, ushort> Thermometer::codeToAMsg() const {
+    ushort msgLen = 6 + getNameLen();
+    uchar *msg = new uchar[msgLen];
+    ushort key = htons(getKey());
+    ushort nameLen = htons(getNameLen());
+    ushort pin = htons(this->pin);
+    uint index = 0;
+    cpyToBuffer(msg, &key, sizeof(key), &index);
+    cpyToBuffer(msg, &nameLen, sizeof(nameLen), &index);
+    cpyToBuffer(msg, getName(), getNameLen(), &index);
+    cpyToBuffer(msg, &pin, sizeof(pin), &index);
+
+    return std::pair<uchar *, ushort>(msg, msgLen);
 }

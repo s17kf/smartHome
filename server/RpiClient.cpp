@@ -3,6 +3,9 @@
 //
 
 #include "RpiClient.h"
+
+#include <algorithm>
+
 #include "endpoints/Light.h"
 #include "endpoints/Shade.h"
 #include "endpoints/Thermometer.h"
@@ -108,3 +111,52 @@ short RpiClient::getNextFreeId() {
     return new_id;
 }
 
+Endpoint* RpiClient::getDevice(ushort devId) {
+    auto device = devices.find(devId);
+    if(device == devices.end())
+        throw std::out_of_range("No device id " + std::to_string(devId));
+    return device->second;
+}
+
+RpiMsg* RpiClient::generateSetStateMsg(ushort devId, ushort val) {
+    RSetState *setState = new RSetState(devId, val);
+    return setState;
+}
+
+const std::map<ushort, Endpoint *> RpiClient::getDevices() const{
+    return devices;
+}
+
+std::vector<ADev *> RpiClient::getACodedDevices() {
+    std::vector<ADev *> allDevices;
+//    for(auto registeredRpi = registeredRpis.begin();
+//        registeredRpi != registeredRpis.end(); ++registeredRpi){
+//    }
+    uint devicesLeftVal = 0;
+    for(auto registeredRpi: registeredRpis){
+        for(auto device: registeredRpi.second->getDevices()){
+            auto codedEndpoint = device.second->codeToAMsg();
+            ushort msgLen = codedEndpoint.second + 11;
+            uchar *msg = new uchar[msgLen];
+            ushort codedMsgLen = htons(msgLen);
+            uchar msgType = AndroidMsg::dev;
+            ushort devTypeId = htons(device.second->getDevTypeId());
+            ushort rpiId = htons(registeredRpi.second->getId());
+            uint codedDevicesLeft = htonl(devicesLeftVal);
+            uint index = 0;
+            Endpoint::cpyToBuffer(msg, &codedMsgLen, sizeof(codedMsgLen), &index);
+            Endpoint::cpyToBuffer(msg, &msgType, sizeof(msgType), &index);
+            Endpoint::cpyToBuffer(msg, &devTypeId, sizeof(devTypeId), &index);
+            Endpoint::cpyToBuffer(msg, &rpiId, sizeof(rpiId), &index);
+            Endpoint::cpyToBuffer(msg, codedEndpoint.first, codedEndpoint.second,
+                    &index);
+            Endpoint::cpyToBuffer(msg, &codedDevicesLeft,
+                    sizeof(codedDevicesLeft), &index);
+            allDevices.push_back(new ADev(msg, msgLen));
+
+            ++devicesLeftVal;
+        }
+    }
+    std::reverse(allDevices.begin(), allDevices.end());
+    return allDevices;
+}

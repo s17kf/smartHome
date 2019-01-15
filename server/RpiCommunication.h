@@ -2,8 +2,8 @@
 // Created by s17kf on 06.12.18.
 //
 
-#ifndef SERVER_SERVER_H
-#define SERVER_SERVER_H
+#ifndef SERVER_RPICOMMUNICATION_H
+#define SERVER_RPICOMMUNICATION_H
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -37,7 +37,7 @@ public:
     int getSocket_fd() const;
     void run();
     void stop();
-
+//    std::vector<uchar *> getCodedDevices();
 
 protected:
     static uint getIpFromSocket(int client_fd);
@@ -52,4 +52,4 @@ private:
 
 
 
-#endif //SERVER_SERVER_H
+#endif //SERVER_RPICOMMUNICATION_H

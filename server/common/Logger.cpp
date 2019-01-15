@@ -5,6 +5,7 @@
 #include "Logger.h"
 #include <cstdarg>
 #include <ctime>
+#include <thread>
 
 FILE *log_file;
 uint std_min_lv;
@@ -34,15 +35,16 @@ void log(int lv, const char *format, ...) {
     char indent[lv+1];
     for(int i = 0; i < lv; ++i)
         indent[i] = '-';
+    std::thread::id threadId = std::this_thread::get_id();
     if(log_file != nullptr){
         indent[lv] = '\0';
-        fprintf(log_file, "%s[%d] %s: ", indent, lv, time_str);
+        fprintf(log_file, "%s[%d-%d] %s: ", indent, lv, threadId, time_str);
         vfprintf(log_file, format, file_args);
         fprintf(log_file, "\n");
         fflush(log_file);
     }
     if(lv <= std_min_lv){
-        printf("%s[%d] %s: ", indent, lv, time_str);
+        printf("%s[%d-%d] %s: ", indent, lv, threadId, time_str);
         vprintf(format, args);
         printf("\n");
         fflush(stdout);

@@ -18,6 +18,8 @@ public:
     std::string toString();
     static Thermometer *generateFromBytes(uchar *bytes, ushort expected_len, short *ret_name_len = nullptr);
 
+    std::pair<uchar *, ushort> codeToAMsg() const override;
+    ushort getDevTypeId() override { return DevTypeId::thermometer; }
 };
 
 

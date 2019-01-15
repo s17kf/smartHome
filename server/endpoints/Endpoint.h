@@ -6,6 +6,7 @@
 #define SERVER_ENDPOINT_H
 
 #include "../Const.h"
+#include "../AndroidMsg.h"
 
 class Endpoint {
     short key;
@@ -21,14 +22,20 @@ public:
 
     unsigned char *getName() const;
 
-    short getName_len() const;
+    short getNameLen() const;
 
     virtual std::string toString();
 //    virtual Endpoint* generateFromBytes(uchar *bytes, size_t expected_len, short *name_len = nullptr) = 0;
     // TODO: endpoint virtual = 0
 
-protected:
-    static void cpy(void *dest, const void *src, size_t num, uint *index);
+    virtual std::pair<uchar *, ushort> codeToAMsg() const = 0;
+    virtual ushort getDevTypeId() = 0;
+public:
+    static void cpyFromBuffer(void *dest, const void *src, size_t num, uint *index);
+    // TODO: index using inside function (pass just buffer pointer not element pointer
+    //  as in cpyToBuffer)
+    static void cpyToBuffer(void *dest, const void *src, size_t num, uint *index);
+
 };
 
 

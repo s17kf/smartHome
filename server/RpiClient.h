@@ -9,6 +9,8 @@
 #include "RpiCommunication.h"
 #include "endpoints/Endpoint.h"
 #include "common/Logger.h"
+#include "RpiMsg.h"
+#include "AndroidMsg.h"
 #include <mutex>
 
 class RpiClient {
@@ -30,18 +32,18 @@ public:
     ~RpiClient();
     Endpoint *addDevice(uchar *codedDevice, size_t size);
     void printAllDevices();
+    RpiMsg *generateSetStateMsg(ushort devId, ushort val);
     static bool isIpInUse(ulong ip);
     static bool isRegisteredId(short id);
     static RpiClient* getRpiClient(short id);
     static short getNextFreeId();
+    Endpoint *getDevice(ushort devId);
+    const std::map<ushort, Endpoint *> getDevices() const;
+    static std::vector<ADev *>getACodedDevices();
 
-    ulong getIp() const {
-        return ip;
-    }
+    ulong getIp() const { return ip; }
 
-    short getId() const {
-        return id;
-    }
+    short getId() const { return id; }
 
     void setLastActivityTime(time_t last_activity_time = time(nullptr)) {
         std::unique_lock<std::mutex> lck(last_activity_time_mtx);

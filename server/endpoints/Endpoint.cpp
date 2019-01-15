@@ -32,11 +32,17 @@ std::string Endpoint::toString() {
     return ret;
 }
 
-void Endpoint::cpy(void *dest, const void *src, size_t num, uint *index) {
+void Endpoint::cpyFromBuffer(void *dest, const void *src, size_t num, uint *index) {
     memcpy(dest, src, num);
+    // TODO: modify usages to pass to next comment line
+//    memcpy(dest, (uchar *)src + *index, num);
     *index += num;
 }
 
+void Endpoint::cpyToBuffer(void *dest, const void *src, size_t num, uint *index) {
+    memcpy((uchar *)dest + *index, src, num);
+    *index += num;
+}
 short Endpoint::getKey() const {
     return key;
 }
@@ -45,6 +51,6 @@ unsigned char *Endpoint::getName() const {
     return name;
 }
 
-short Endpoint::getName_len() const {
+short Endpoint::getNameLen() const {
     return name_len;
 }

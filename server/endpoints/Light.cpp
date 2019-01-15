@@ -27,15 +27,31 @@ Light* Light::generateFromBytes(uchar *bytes, size_t expected_len, short *ret_na
     short pin;
     bool zero_triggered;
     uint index = 0;
-    cpy(&key, bytes, sizeof(key), &index);
+    cpyFromBuffer(&key, bytes, sizeof(key), &index);
     key = ntohs(key);
-    cpy(&name_len, &bytes[index], sizeof(name_len), &index);
+    cpyFromBuffer(&name_len, &bytes[index], sizeof(name_len), &index);
     name_len = ntohs(name_len);
     uchar name[name_len];
-    cpy(&name, &bytes[index], name_len, &index);
-    cpy(&pin, &bytes[index], sizeof(pin), &index);
+    cpyFromBuffer(&name, &bytes[index], name_len, &index);
+    cpyFromBuffer(&pin, &bytes[index], sizeof(pin), &index);
     pin = ntohs(pin);
-    cpy(&zero_triggered, &bytes[index], sizeof(zero_triggered), &index);
+    cpyFromBuffer(&zero_triggered, &bytes[index], sizeof(zero_triggered), &index);
     //TODO: check if not bigger than expected size - throw ...
     return new Light(key, name, name_len, pin, zero_triggered);
+}
+
+std::pair<uchar *, ushort> Light::codeToAMsg() const {
+    ushort msgLen = 7 + getNameLen();
+    uchar *msg = new uchar[msgLen];
+    short key = htons(getKey());
+    short nameLen = htons(getNameLen());
+    short pin = htons(this->pin);
+    uint index = 0;
+    cpyToBuffer(msg, &key, sizeof(key), &index);
+    cpyToBuffer(msg, &nameLen, sizeof(nameLen), &index);
+    cpyToBuffer(msg, getName(), getNameLen(), &index);
+    cpyToBuffer(msg, &pin, sizeof(pin), &index);
+    cpyToBuffer(msg, &zero_triggered, sizeof(zero_triggered), &index);
+
+    return std::pair<uchar *, ushort>(msg, msgLen);
 }

@@ -8,7 +8,7 @@
 #include "RpiClient.h"
 #include "common/Logger.h"
 #include "common/Atomic.h"
-#include "Msg.h"
+#include "RpiMsg.h"
 
 //struct sockaddr_in RpiCommunication::address;
 //int RpiCommunication::addressLen = 0;
@@ -50,6 +50,7 @@ int RpiCommunication::getSocket_fd() const {
 }
 
 void RpiCommunication::run() {
+    log(0, "rpi communication id is %d", std::this_thread::get_id());
     fd_set readfds;
     timeval timeout;
     while(true) {
@@ -113,13 +114,13 @@ void RpiCommunication::stop() {
 void RpiCommunication::clientConnection(int clientSocket) {
     while(true){
         log(5, "client connection");
-        Msg *msg = Msg::receiveMsg(clientSocket);
+        RpiMsg *msg = RpiMsg::receiveMsg(clientSocket);
         if(msg == nullptr){
             log(0, "received msg is nullptr, closing client connectioon");
             close(clientSocket);
             break;
         }
-        if(auto dev = dynamic_cast<Dev *>(msg)){
+        if(auto dev = dynamic_cast<RDev *>(msg)){
             log(1, "dev received");
             auto rpi_id = dev->getRpiId();
             auto rpiClient = RpiClient::getRpiClient(rpi_id);
@@ -133,7 +134,7 @@ void RpiCommunication::clientConnection(int clientSocket) {
                     dev->getCodedDevLen());
             if(newDevice == nullptr){
                 log(2, "Failed to add nev device from %d", rpi_id);
-                Nack *nack = new Nack(dev->getDevId());
+                RNack *nack = new RNack(dev->getDevId());
                 auto sent = nack->send(clientSocket);
                 log(2, "Sent %d bytes: %s", sent, nack->toString().c_str());
                 delete nack;
@@ -143,39 +144,39 @@ void RpiCommunication::clientConnection(int clientSocket) {
             else{
                 log(2, "added new device on %d: %s", rpi_id,
                         newDevice->toString().c_str());
-                Ack *ack = new Ack(dev->getDevId());
+                RAck *ack = new RAck(dev->getDevId());
                 auto sent = ack->send(clientSocket);
                 log(2, "sent %d bytes: %s", sent, ack->toString().c_str());
                 delete ack;
                 delete msg;
                 continue;
             }
-        }else if(auto val = dynamic_cast<ValDouble *>(msg)){
+        }else if(auto val = dynamic_cast<RValDouble *>(msg)){
             log(2, "val from %d, %d=%f recveived", val->getRpiId(), val->getDevId(),
             val->getVal());
             sendAck(clientSocket, val->getDevId());
             delete val;
             close(clientSocket);
             break;
-        }else if(auto end = dynamic_cast<End *>(msg)){
+        }else if(auto end = dynamic_cast<REnd *>(msg)){
             log(1, "end received, closing socket");
 //            ushort client_id = end->getVal();
             auto rpiClient = RpiClient::getRpiClient(end->getVal());
             if(rpiClient == nullptr){
-                log(1, "End: bad client id %d", end->getVal());
+                log(1, "REnd: bad client id %d", end->getVal());
             } else {
                 rpiClient->printAllDevices();
             }
             delete msg;
             close(clientSocket);
             break;
-        }else if(auto reg = dynamic_cast<Reg *>(msg)){
+        }else if(auto reg = dynamic_cast<RReg *>(msg)){
             log(1, "reg received");
             auto rpi_id = addNewRpiClient(clientSocket);
             auto rpi_ip = getIpFromSocket(clientSocket);
             if(rpi_id < 0){
                 log(0, "new rpi id is %d - max rpis reached", rpi_id);
-                Nack *nack = new Nack(ushort(0));
+                RNack *nack = new RNack(ushort(0));
                 auto sent = nack->send(clientSocket);
                 log(2, "sent %d bytes: %s", sent, nack->toString().c_str());
                 delete nack;
@@ -185,7 +186,7 @@ void RpiCommunication::clientConnection(int clientSocket) {
             } else{
                 log(3, "new rpi client %s with id %d",
                         Const::ipToString(rpi_ip).c_str(), rpi_id);
-                Ack *ack = new Ack(rpi_id);
+                RAck *ack = new RAck(rpi_id);
                 auto sent = ack->send(clientSocket);
                 log(2, "sent %d bytes: %s", sent, ack->toString().c_str());
                 delete ack;
@@ -204,14 +205,14 @@ void RpiCommunication::clientConnection(int clientSocket) {
 }
 
 void RpiCommunication::sendNack(int clientSocket, ushort val) {
-    Nack *nack = new Nack(val);
+    RNack *nack = new RNack(val);
     auto sent = nack->send(clientSocket);
     log(2, "Sent %d bytes: %s", sent, nack->toString().c_str());
     delete nack;
 }
 
 void RpiCommunication::sendAck(int clientSocket, ushort val) {
-    auto *ack = new Ack(val);
+    auto *ack = new RAck(val);
     auto sent = ack->send(clientSocket);
     log(2, "sent %d bytes: %s", sent, ack->toString().c_str());
     delete ack;
